@@ -35,6 +35,7 @@ def run_conversion(source, output_folder="calendars"):
 
         cal = Calendar()
         cal.add('x-wr-calname', cal_name)
+        cal.add('x-wr-timezone', 'Pacific/Auckland')
         cal.add('prodid', f'-//Global// {cal_name} //EN')
         cal.add('version', '2.0')
 

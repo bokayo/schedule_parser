@@ -9,11 +9,12 @@ NZ_TZ = pytz.timezone('Pacific/Auckland')
 def parse_iso_time(time_str):
     if not time_str: return None
     t = str(time_str).strip().upper()
-    # Match 12:25pm, 1:15pm, 1pm, etc.
+    # Robust regex to find 12:25pm, 1:15pm, 1pm, 6:00pm, etc.
     match = re.search(r'(\d{1,2})(?::(\d{2}))?\s*([AP]M)', t)
     if match:
         hr, mn, ampm = match.groups()
         mn = mn if mn else "00"
+        # Convert to 24hr format for processing
         return datetime.strptime(f"{hr}:{mn}{ampm}", "%I:%M%p")
     return None
 
@@ -62,10 +63,11 @@ def run_conversion(source, output_folder="calendars"):
             start_date = found_dates[0]
             end_date = found_dates[-1]
 
-            # 2. TIME EXTRACTION (Finding BOTH Start and End times in the row)
-            # This looks for all clock times like '12:25pm' and '1:15pm'
-            all_times = re.findall(r'(\d{1,2}(?::\d{2})?\s*[AP]M)', row_text, re.IGNORECASE)
+            # 2. TIME EXTRACTION - The "Harvest All" Method
+            # This finds all instances of times like 3:30pm and 6:00pm in the row
+            all_times = re.findall(r'\d{1,2}(?::\d{2})?\s*[AP]M', row_text, re.IGNORECASE)
             
+            # Map location and note based on column positions
             loc_val = cells[3] if len(cells) > 3 else "WGHS EC"
             note_val = cells[-1]
 
@@ -77,25 +79,26 @@ def run_conversion(source, output_folder="calendars"):
             event.add('uid', hashlib.md5(f"{cal_name}{start_date}{row_text}".encode()).hexdigest() + "@bot")
 
             if all_times:
-                # TIMED EVENT: Use the first time for start, and second (if exists) for end
+                # TIMED EVENT
                 t_start = parse_iso_time(all_times[0])
                 dt_start = NZ_TZ.localize(datetime.combine(start_date.date(), t_start.time()))
                 event.add('dtstart', dt_start)
                 
+                # If a second time (end time) was found in the row, use it!
                 if len(all_times) > 1:
-                    t_end = parse_iso_time(all_times[1])
+                    t_end = parse_iso_time(all_times[-1]) # Take the last time found as end time
                     dt_end = NZ_TZ.localize(datetime.combine(start_date.date(), t_end.time()))
                     event.add('dtend', dt_end)
                 else:
+                    # Default 50 mins if no end time is written
                     event.add('dtend', dt_start + timedelta(minutes=50))
             else:
-                # ALL-DAY EVENT: The secret is end_date + 1 day
+                # ALL-DAY EVENT
                 event.add('dtstart', start_date.date())
-                # If it's May 15-16, end_date is May 17 so it shows both full days
                 event.add('dtend', end_date.date() + timedelta(days=1))
 
             master_cal.add_component(event)
-            print(f"Captured: {start_date.date()} to {end_date.date()} | {note_val}")
+            print(f"Synced: {start_date.date()} | Time: {all_times} | {note_val}")
 
         with open(master_path, 'wb') as f: f.write(master_cal.to_ical())
 

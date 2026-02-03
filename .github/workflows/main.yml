@@ -1,0 +1,45 @@
+name: Global Schedule Sync
+
+on:
+  schedule:
+    - cron: '0 21,3,9,15 * * *'
+  workflow_dispatch:
+
+# These permissions allow the robot to "push" (write) files back to your repo
+permissions:
+  contents: write
+
+jobs:
+  run-sync:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Copy your code onto the robot's computer
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 2. Install Python
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      # 3. Install the libraries the script needs
+      - name: Install Libraries
+        run: pip install beautifulsoup4 icalendar requests
+
+      # 4. Run the script for every URL in your sources.txt
+      - name: Execute Scraper
+        run: |
+          while IFS= read -r url || [ -n "$url" ]; do
+            [[ -z "$url" ]] && continue
+            eval "python sked_scraper.py $url"
+          done < sources.txt
+
+      # 5. Commit the new .ics files back to your GitHub repo
+      - name: Commit and Push Changes
+        run: |
+          git config --global user.name "Schedule Bot"
+          git config --global user.email "bot@github-actions.com"
+          git add *.ics
+          # Only commit if there are actually changes to avoid errors
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Update calendars" && git push)

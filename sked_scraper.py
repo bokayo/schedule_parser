@@ -24,7 +24,7 @@ def clean_text(text):
 
 def run_conversion(source, output_folder="calendars"):
     if not os.path.exists(output_folder): os.makedirs(output_folder)
-    master_path = os.path.join(output_folder, "Master_Schedule.ics")
+    master_path = os.path.join(output_folder, "Ensemble_Schedule.ics")
 
     try:
         if source.startswith('http'):
@@ -35,13 +35,13 @@ def run_conversion(source, output_folder="calendars"):
         
         soup = BeautifulSoup(html_content, 'html.parser')
         year = "2026"
-        cal_name = "Taharoto Strings"
+        cal_name = "Ensembles"
 
         if os.path.exists(master_path):
             with open(master_path, 'rb') as f: master_cal = Calendar.from_ical(f.read())
         else:
             master_cal = Calendar()
-            master_cal.add('x-wr-calname', 'Master Schedule')
+            master_cal.add('x-wr-calname', 'Ensemble Schedule')
             master_cal.add('x-wr-timezone', 'Pacific/Auckland')
             master_cal.add('version', '2.0')
 

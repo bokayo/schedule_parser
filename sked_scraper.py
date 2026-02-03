@@ -24,7 +24,7 @@ def clean_text(text):
 
 def run_conversion(source, output_folder="calendars"):
     if not os.path.exists(output_folder): os.makedirs(output_folder)
-    master_path = os.path.join(output_folder, "Ensemble_Schedule.ics")
+    master_path = os.path.join(output_folder, "Ensemble_Sked.ics")
 
     try:
         if source.startswith('http'):

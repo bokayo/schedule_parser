@@ -3,6 +3,8 @@ from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
 from icalendar import Calendar, Event
 
+NZ_TZ = pytz.timezone('Pacific/Auckland')
+
 def parse_iso_time(time_str):
     if not time_str: return None
     t = str(time_str).strip().upper()
@@ -74,7 +76,8 @@ def run_conversion(source, output_folder="calendars"):
                             
                             start_iso = parse_iso_time(re.split(r'\s*-\s*', str(time_val))[0])
                             if start_iso and ":" in str(start_iso):
-                                start_dt = datetime.strptime(f"{iso_date} {start_iso}", "%Y-%m-%d %H:%M:%S")
+                                start_dt = NZ_TZ.localize(datetime.combine(iso_date.date(), start_iso.time()))
+                                # start_dt = datetime.strptime(f"{iso_date} {start_iso}", "%Y-%m-%d %H:%M:%S")
                                 event.add('dtstart', start_dt)
                                 event.add('dtend', start_dt + timedelta(hours=1))
                             else:

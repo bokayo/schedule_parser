@@ -24,6 +24,9 @@ jobs:
       - name: Install Libraries
         run: pip install beautifulsoup4 icalendar requests pytz
 
+      - name: Clean Start
+        run: rm -f calendars/*.ics
+
       - name: Execute Scraper
         run: |
           mkdir -p calendars

@@ -35,7 +35,18 @@ def run_conversion(source, output_folder="calendars"):
         
         soup = BeautifulSoup(html_content, 'html.parser')
         year = "2026"
-        cal_name = "Ensembles"
+        # --- CAL_NAME MAPPING ---
+        # Get the first visible text line in the entire document
+        first_line = soup.get_text(" ", strip=True).lower()
+        
+        if "taharoto strings" in first_line:
+            cal_name = "Taharoto"
+        elif "westlake symphony orchestra" in first_line:
+            cal_name = "WSO"
+        else:
+            # Fallback to a shortened version of the first snippet found
+            first_snippet = clean_text(soup.find(['h1', 'p', 'span']).get_text())
+            cal_name = first_snippet[:15]
 
         if os.path.exists(master_path):
             with open(master_path, 'rb') as f: master_cal = Calendar.from_ical(f.read())
@@ -98,7 +109,7 @@ def run_conversion(source, output_folder="calendars"):
                 event.add('dtend', end_date.date() + timedelta(days=1))
 
             master_cal.add_component(event)
-            print(f"Synced: {start_date.date()} | Time: {all_times} | {note_val}")
+            print(f"Synced: {cal_name} * {start_date.date()} | Time: {all_times} | {note_val}")
 
         with open(master_path, 'wb') as f: f.write(master_cal.to_ical())
 
